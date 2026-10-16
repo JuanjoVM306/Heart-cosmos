@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cosmic Magnetic Hearts</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            touch-action: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #05020a;
+            overflow: hidden;
+            font-family: 'Georgia', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+        }
+        #ui {
+            position: absolute;
+            top: 7%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+            width: 100%;
+            padding: 0 20px;
+        }
+        h1 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+            letter-spacing: 1.5px;
+            background: linear-gradient(135deg, #ff9f1c 0%, #9d4edd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(157, 78, 221, 0.4);
+        }
+        p {
+            font-size: 0.8rem;
+            opacity: 0.5;
+            margin: 0;
+            letter-spacing: 0.8px;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h1>Cosmic Hearts</h1>
+        <p>Une los núcleos para despertar la energía</p>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+
+        // --- Configuración del Poema ---
+        // Puedes cambiar este texto por el poema que desees (usa '\n' para saltos de línea)
+        const poemText = "Quiero pedirte perdón si mi forma de expresarme te llegó a abrumar,\nsi con mis detalles e intensidad no te dejé tranquila respirar.\nSabes muy bien que no suelo ser así con nadie más en mi vida,\npero contigo mi verdadero sentir encontró una clara salida.\n\nNo vengo a pedirte respuestas ni a volver a presionar,\nentiendo que tu corazón necesita tiempo y espacio para sanar.\nMis palabras ya te dijeron la promesa que elegí sostener,\ny mi postura no ha cambiado, no hay nada que temer.\n\nTe esperaré en este rincón del universo con paciencia y calma,\nrespetando tus procesos y cuidando el espacio de tu alma.\nSolo el tiempo, una palabra tuya o un nuevo destino en tu camino\npodrán cambiar la certeza de lo que hoy por ti siento y convino.\n\nMe quedo tranquilo observando cómo vuelves a brillar,\nsabiendo que lo que es verdadero... jamás se necesita forzar.";
+
+        const fontSize = 18;
+        let lineHeight;
+        let lines;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            lineHeight = fontSize * 1.5;
+            ctx.font = `${fontSize}px Georgia, serif`;
+            lines = wrapText(poemText, width * 0.8);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function wrapText(text, maxWidth) {
+            let wrappedLines = [];
+            const paragraphs = text.split('\n');
+            paragraphs.forEach(paragraph => {
+                if (paragraph.length === 0) {
+                    wrappedLines.push("");
+                    return;
+                }
+                let words = paragraph.split(' ');
+                let currentLine = words[0];
+
+                for (let i = 1; i < words.length; i++) {
+                    let word = words[i];
+                    let widthMeasure = ctx.measureText(currentLine + " " + word).width;
+                    if (widthMeasure < maxWidth) {
+                        currentLine += " " + word;
+                    } else {
+                        wrappedLines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                wrappedLines.push(currentLine);
+            });
+            return wrappedLines;
+        }
+
+        function drawStaticPoem() {
+            ctx.fillStyle = '#d1b3ff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `${fontSize}px Georgia, serif`;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#9d4edd';
+
+            const totalHeight = lines.length * lineHeight;
+            let startY = (height - totalHeight) / 2 + lineHeight / 2;
+
+            lines.forEach((line, index) => {
+                ctx.fillText(line, width / 2, startY + index * lineHeight);
+            });
+            
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+        }
+
+        // Nodos magnéticos con estilo único (Ámbar y Violeta Cósmico)
+        const nodeA = {
+            x: width * 0.38,
+            y: height * 0.55,
+            targetX: width * 0.38,
+            targetY: height * 0.55,
+            radius: 24,
+            color: '#ff9f1c', // Ámbar brillante
+            glowColor: 'rgba(255, 159, 28, 0.7)',
+            isDragging: false
+        };
+
+        const nodeB = {
+            x: width * 0.62,
+            y: height * 0.55,
+            targetX: width * 0.62,
+            targetY: height * 0.55,
+            radius: 24,
+            color: '#9d4edd', // Violeta neón
+            glowColor: 'rgba(157, 78, 221, 0.7)',
+            isDragging: false
+        };
+
+        let activeNode = null;
+
+        // Partículas estelares personalizadas
+        const particleCount = 1300;
+        const particles = [];
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.angle = Math.random() * Math.PI * 2;
+                this.baseRadius = Math.random() * 70 + 25;
+                this.speed = Math.random() * 0.025 + 0.008;
+                this.size = Math.random() * 1.8 + 0.4;
+                this.alpha = Math.random() * 0.8 + 0.2;
+                this.assigned = Math.random() > 0.5 ? 'A' : 'B';
+                this.color = Math.random() > 0.4 ? '#ffffff' : (Math.random() > 0.5 ? '#ff9f1c' : '#c77dff');
+            }
+
+            update(connected, cx, cy) {
+                if (connected) {
+                    this.angle += this.speed * 1.3;
+                    let t = this.angle;
+                    
+                    // Silueta de corazón fluida más pequeña (escala 8.5)
+                    let hx = 16 * Math.pow(Math.sin(t), 3);
+                    let hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+                    
+                    let targetX = cx + hx * 8.5;
+                    let targetY = cy + hy * 8.5;
+
+                    this.x += (targetX - this.x) * 0.09;
+                    this.y += (targetY - this.y) * 0.09;
+                } else {
+                    let node = this.assigned === 'A' ? nodeA : nodeB;
+                    this.angle += this.speed;
+
+                    let orbitX = node.x + Math.cos(this.angle) * this.baseRadius;
+                    let orbitY = node.y + Math.sin(this.angle) * this.baseRadius;
+
+                    this.x += (orbitX - this.x) * 0.12;
+                    this.y += (orbitY - this.y) * 0.12;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        // Gestión táctil y de ratón con RESTRICCIÓN DE BORDES
+        function getPointerPos(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX, y: clientY };
+        }
+
+        function onPointerDown(e) {
+            const pos = getPointerPos(e);
+            // Comprobamos los nodos para arrastrar, asegurándonos de que NodeA (amarillo) se priorice si se superponen
+            let possibleNodes = [nodeA, nodeB];
+            for (let i = 0; i < possibleNodes.length; i++) {
+                let node = possibleNodes[i];
+                const dist = Math.hypot(pos.x - node.x, pos.y - node.y);
+                if (dist < node.radius * 2.2) {
+                    activeNode = node;
+                    node.isDragging = true;
+                    // Solo priorizar nodeA si ambos están cerca de un nodo arrastrable, de lo contrario, arrastrar el que está cerca
+                    if (node === nodeA || Math.hypot(pos.x - nodeA.x, pos.y - nodeA.y) >= nodeA.radius * 2.2) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!activeNode) return;
+            const pos = getPointerPos(e);
+            
+            const margin = activeNode.radius + 10;
+            const topMargin = activeNode.radius + 70;
+            
+            const clampedX = Math.max(margin, Math.min(width - margin, pos.x));
+            const clampedY = Math.max(topMargin, Math.min(height - margin, pos.y));
+
+            activeNode.targetX = clampedX;
+            activeNode.targetY = clampedY;
+        }
+
+        function onPointerUp() {
+            if (activeNode) {
+                activeNode.isDragging = false;
+                activeNode = null;
+            }
+        }
+
+        window.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        window.addEventListener('touchstart', onPointerDown);
+        window.addEventListener('touchmove', onPointerMove);
+        window.addEventListener('touchend', onPointerUp);
+
+        function defineHeartMask(ctx, cx, cy, scale) {
+            ctx.beginPath();
+            let steps = 100;
+            for (let i = 0; i < steps; i++) {
+                let t = (i / steps) * Math.PI * 2;
+                let hx = 16 * Math.pow(Math.sin(t), 3);
+                let hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+                let x = cx + hx * scale;
+                let y = cy + hy * scale;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+        }
+
+        // Bucle de renderizado fluido
+        function animate() {
+            ctx.fillStyle = 'rgba(5, 2, 10, 0.28)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Inercia de movimiento suave para los nodos
+            nodeA.x += (nodeA.targetX - nodeA.x) * 0.2;
+            nodeA.y += (nodeA.targetY - nodeA.y) * 0.2;
+            nodeB.x += (nodeB.targetX - nodeB.x) * 0.2;
+            nodeB.y += (nodeB.targetY - nodeB.y) * 0.2;
+
+            const distance = Math.hypot(nodeA.x - nodeB.x, nodeA.y - nodeB.y);
+            const connectionThreshold = 75;
+            const isConnected = distance < connectionThreshold;
+
+            let centerX = (nodeA.x + nodeB.x) / 2;
+            let centerY = (nodeA.y + nodeB.y) / 2;
+
+            if (isConnected) {
+                if (!nodeA.isDragging) {
+                    nodeA.targetX += (centerX - nodeA.targetX) * 0.3;
+                    nodeA.targetY += (centerY - nodeA.targetY) * 0.3;
+                }
+                if (!nodeB.isDragging) {
+                    nodeB.targetX += (centerX - nodeB.targetX) * 0.3;
+                    nodeB.targetY += (centerY - nodeB.targetY) * 0.3;
+                }
+
+                // Linterna UV: Revelar el poema oculto dentro de la máscara del corazón
+                ctx.save();
+                defineHeartMask(ctx, centerX, centerY, 8.5);
+                ctx.clip();
+                drawStaticPoem();
+                ctx.restore();
+            }
+
+            // Las partículas se actualizan y se dibujan SOBRE el poema revelado (al frente)
+            particles.forEach(p => {
+                p.update(isConnected, centerX, centerY);
+                p.draw();
+            });
+
+            // Dibujar Nodo B (Violeta) primero para que NodeA esté encima
+            ctx.save();
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = nodeB.color;
+            ctx.fillStyle = nodeB.color;
+            ctx.beginPath();
+            ctx.arc(nodeB.x, nodeB.y, nodeB.radius * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(nodeB.x, nodeB.y, nodeB.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Dibujar Nodo A (Ámbar) después para que esté encima
+            ctx.save();
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = nodeA.color;
+            ctx.strokeStyle = nodeA.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(nodeA.x, nodeA.y, nodeA.radius * 1.3, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = nodeA.color;
+            ctx.beginPath();
+            ctx.arc(nodeA.x, nodeA.y, nodeA.radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(nodeA.x, nodeA.y, nodeA.radius * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
