@@ -21,28 +21,32 @@
         }
         #ui {
             position: absolute;
-            top: 7%;
+            top: 3%;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
             pointer-events: none;
             z-index: 10;
             width: 100%;
-            padding: 0 20px;
+            padding: 0 15px;
+            transition: opacity 0.6s ease; /* Transición suave para ocultarse */
+        }
+        #ui.fade-out {
+            opacity: 0;
         }
         h1 {
-            font-size: 1.7rem;
+            font-size: 1.5rem;
             font-weight: 600;
-            margin: 0 0 6px 0;
+            margin: 0 0 4px 0;
             letter-spacing: 1.5px;
             background: linear-gradient(135deg, #ff9f1c 0%, #9d4edd 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(157, 78, 221, 0.4);
+            text-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
         }
         p {
-            font-size: 0.8rem;
-            opacity: 0.5;
+            font-size: 0.75rem;
+            opacity: 0.6;
             margin: 0;
             letter-spacing: 0.8px;
         }
@@ -50,7 +54,7 @@
             display: block;
             width: 100vw;
             height: 100vh;
-            touch-action: none; /* Permitir manejo exclusivo en el canvas sin romper eventos */
+            touch-action: none;
         }
     </style>
 </head>
@@ -58,7 +62,7 @@
 
     <div id="ui">
         <h1>Cosmic Hearts</h1>
-        <p>Une los núcleos para despertar la energía</p>
+        <p>Une los núcleos para revelar el secreto</p>
     </div>
 
     <canvas id="canvas"></canvas>
@@ -66,22 +70,23 @@
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const uiElement = document.getElementById('ui');
 
         let width, height;
 
         // --- Configuración del Poema ---
         const poemText = "Quiero pedirte perdón si mi forma de expresarme te llegó a abrumar,\nsi con mis detalles e intensidad no te dejé tranquila respirar.\nSabes muy bien que no suelo ser así con nadie más en mi vida,\npero contigo mi verdadero sentir encontró una clara salida.\n\nNo vengo a pedirte respuestas ni a volver a presionar,\nentiendo que tu corazón necesita tiempo y espacio para sanar.\nMis palabras ya te dijeron la promesa que elegí sostener,\ny mi postura no ha cambiado, no hay nada que temer.\n\nTe esperaré en este rincón del universo con paciencia y calma,\nrespetando tus procesos y cuidando el espacio de tu alma.\nSolo el tiempo, una palabra tuya o un nuevo destino en tu camino\npodrán cambiar la certeza de lo que hoy por ti siento y convino.\n\nMe quedo tranquilo observando cómo vuelves a brillar,\nsabiendo que lo que es verdadero... jamás se necesita forzar.";
 
-        const fontSize = 16;
+        const fontSize = 15;
         let lineHeight;
         let lines;
 
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            lineHeight = fontSize * 1.4;
+            lineHeight = fontSize * 1.35;
             ctx.font = `${fontSize}px Georgia, serif`;
-            lines = wrapText(poemText, width * 0.9);
+            lines = wrapText(poemText, width * 0.85);
         }
         window.addEventListener('resize', resize);
         resize();
@@ -121,7 +126,7 @@
             ctx.shadowColor = '#9d4edd';
 
             const totalHeight = lines.length * lineHeight;
-            let startY = (height - totalHeight) / 2 + lineHeight / 2 + 30;
+            let startY = (height - totalHeight) / 2 + lineHeight / 2 + 10;
 
             lines.forEach((line, index) => {
                 ctx.fillText(line, width / 2, startY + index * lineHeight);
@@ -134,9 +139,9 @@
         // Nodos magnéticos con estilo único
         const nodeA = {
             x: width * 0.38,
-            y: height * 0.55,
+            y: height * 0.58,
             targetX: width * 0.38,
-            targetY: height * 0.55,
+            targetY: height * 0.58,
             radius: 24,
             color: '#ff9f1c',
             isDragging: false
@@ -144,9 +149,9 @@
 
         const nodeB = {
             x: width * 0.62,
-            y: height * 0.55,
+            y: height * 0.58,
             targetX: width * 0.62,
-            targetY: height * 0.55,
+            targetY: height * 0.58,
             radius: 24,
             color: '#9d4edd',
             isDragging: false
@@ -220,7 +225,6 @@
             let clientX, clientY, touchId = null;
 
             if (e.touches && e.touches.length > 0) {
-                // Tomar el último toque añadido
                 const touch = e.touches[e.touches.length - 1];
                 clientX = touch.clientX;
                 clientY = touch.clientY;
@@ -233,7 +237,6 @@
             const distA = Math.hypot(clientX - nodeA.x, clientY - nodeA.y);
             const distB = Math.hypot(clientX - nodeB.x, clientY - nodeB.y);
 
-            // Priorizar nodo A (amarillo) si ambos están cerca
             if (distA < nodeA.radius * 2.5) {
                 activeNode = nodeA;
                 nodeA.isDragging = true;
@@ -266,7 +269,7 @@
             }
             
             const margin = activeNode.radius + 10;
-            const topMargin = activeNode.radius + 100;
+            const topMargin = activeNode.radius + 40;
             
             const clampedX = Math.max(margin, Math.min(width - margin, clientX));
             const clampedY = Math.max(topMargin, Math.min(height - margin, clientY));
@@ -294,12 +297,10 @@
             }
         }
 
-        // Eventos de ratón
         window.addEventListener('mousedown', onPointerDown);
         window.addEventListener('mousemove', onPointerMove);
         window.addEventListener('mouseup', onPointerUp);
 
-        // Eventos táctiles orientados a móviles
         window.addEventListener('touchstart', onPointerDown, { passive: true });
         window.addEventListener('touchmove', onPointerMove, { passive: true });
         window.addEventListener('touchend', onPointerUp);
@@ -335,6 +336,13 @@
 
             let centerX = (nodeA.x + nodeB.x) / 2;
             let centerY = (nodeA.y + nodeB.y) / 2;
+
+            // Ocultar o mostrar el texto superior según si el corazón está formado
+            if (isConnected) {
+                uiElement.classList.add('fade-out');
+            } else {
+                uiElement.classList.remove('fade-out');
+            }
 
             if (isConnected) {
                 if (!nodeA.isDragging) {
