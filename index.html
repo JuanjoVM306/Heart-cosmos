@@ -8,7 +8,7 @@
         * {
             box-sizing: border-box;
             user-select: none;
-            touch-action: none;
+            touch-action: none; /* Crucial para evitar scroll/zoom táctil */
         }
         body, html {
             margin: 0;
@@ -69,20 +69,20 @@
 
         let width, height;
 
-        // --- Configuración del Poema ---
-        // Puedes cambiar este texto por el poema que desees (usa '\n' para saltos de línea)
-        const poemText = "En el silencio de la red,\ndos almas trazan su camino.\nSus órbitas, un baile fiel,\nque desafía al cruel destino.\n\nAl acercarse, el caos cesa,\nun pulso al unísono late.\nY en el abrazo que embelesa,\nsu propia luz es el rescate.";
+        // --- Configuración del Nuevo Poema ---
+        const poemText = "Quiero pedirte perdón si mi forma de expresarme te llegó a abrumar,\nsi con mis detalles e intensidad no te dejé tranquila respirar.\nSabes muy bien que no suelo ser así con nadie más en mi vida,\npero contigo mi verdadero sentir encontró una clara salida.\n\nNo vengo a pedirte respuestas ni a volver a presionar,\nentiendo que tu corazón necesita tiempo y espacio para sanar.\nMis palabras ya te dijeron la promesa que elegí sostener,\ny mi postura no ha cambiado, no hay nada que temer.\n\nTe esperaré en este rincón del universo con paciencia y calma,\nrespetando tus procesos y cuidando el espacio de tu alma.\nSolo el tiempo, una palabra tuya o un nuevo destino en tu camino\npodrán cambiar la certeza de lo que hoy por ti siento y convino.\n\nMe quedo tranquilo observando cómo vuelves a brillar,\nsabiendo que lo que es verdadero... jamás se necesita forzar.";
 
-        const fontSize = 18;
+        const fontSize = 16; // Un poco más pequeña para que quepa todo el texto
         let lineHeight;
         let lines;
 
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            lineHeight = fontSize * 1.5;
+            lineHeight = fontSize * 1.4;
             ctx.font = `${fontSize}px Georgia, serif`;
-            lines = wrapText(poemText, width * 0.8);
+            // Ajustar el ancho máximo del texto al 90% para móviles
+            lines = wrapText(poemText, width * 0.9);
         }
         window.addEventListener('resize', resize);
         resize();
@@ -122,7 +122,8 @@
             ctx.shadowColor = '#9d4edd';
 
             const totalHeight = lines.length * lineHeight;
-            let startY = (height - totalHeight) / 2 + lineHeight / 2;
+            // Centrado vertical ajustado para dejar espacio arriba
+            let startY = (height - totalHeight) / 2 + lineHeight / 2 + 30;
 
             lines.forEach((line, index) => {
                 ctx.fillText(line, width / 2, startY + index * lineHeight);
@@ -132,7 +133,7 @@
             ctx.shadowColor = 'transparent';
         }
 
-        // Nodos magnéticos con estilo único (Ámbar y Violeta Cósmico)
+        // Nodos magnéticos con estilo único
         const nodeA = {
             x: width * 0.38,
             y: height * 0.55,
@@ -140,7 +141,6 @@
             targetY: height * 0.55,
             radius: 24,
             color: '#ff9f1c', // Ámbar brillante
-            glowColor: 'rgba(255, 159, 28, 0.7)',
             isDragging: false
         };
 
@@ -151,13 +151,12 @@
             targetY: height * 0.55,
             radius: 24,
             color: '#9d4edd', // Violeta neón
-            glowColor: 'rgba(157, 78, 221, 0.7)',
             isDragging: false
         };
 
         let activeNode = null;
 
-        // Partículas estelares personalizadas
+        // Partículas estelares
         const particleCount = 1300;
         const particles = [];
 
@@ -183,10 +182,10 @@
                     this.angle += this.speed * 1.3;
                     let t = this.angle;
                     
-                    // Silueta de corazón fluida más pequeña (escala 8.5)
                     let hx = 16 * Math.pow(Math.sin(t), 3);
                     let hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
                     
+                    // Escala 8.5 para el corazón
                     let targetX = cx + hx * 8.5;
                     let targetY = cy + hy * 8.5;
 
@@ -218,7 +217,7 @@
             particles.push(new Particle());
         }
 
-        // Gestión táctil y de ratón con RESTRICCIÓN DE BORDES
+        // Gestión táctil y de ratón
         function getPointerPos(e) {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -227,19 +226,17 @@
 
         function onPointerDown(e) {
             const pos = getPointerPos(e);
-            // Comprobamos los nodos para arrastrar, asegurándonos de que NodeA (amarillo) se priorice si se superponen
-            let possibleNodes = [nodeA, nodeB];
-            for (let i = 0; i < possibleNodes.length; i++) {
-                let node = possibleNodes[i];
-                const dist = Math.hypot(pos.x - node.x, pos.y - node.y);
-                if (dist < node.radius * 2.2) {
-                    activeNode = node;
-                    node.isDragging = true;
-                    // Solo priorizar nodeA si ambos están cerca de un nodo arrastrable, de lo contrario, arrastrar el que está cerca
-                    if (node === nodeA || Math.hypot(pos.x - nodeA.x, pos.y - nodeA.y) >= nodeA.radius * 2.2) {
-                        return;
-                    }
-                }
+            
+            // Prioridad al nodo amarillo (NodeA)
+            const distA = Math.hypot(pos.x - nodeA.x, pos.y - nodeA.y);
+            const distB = Math.hypot(pos.x - nodeB.x, pos.y - nodeB.y);
+
+            if (distA < nodeA.radius * 2.2) {
+                activeNode = nodeA;
+                nodeA.isDragging = true;
+            } else if (distB < nodeB.radius * 2.2) {
+                activeNode = nodeB;
+                nodeB.isDragging = true;
             }
         }
 
@@ -247,8 +244,9 @@
             if (!activeNode) return;
             const pos = getPointerPos(e);
             
+            // Límites para evitar que se pierdan los nodos
             const margin = activeNode.radius + 10;
-            const topMargin = activeNode.radius + 70;
+            const topMargin = activeNode.radius + 100; // Más espacio arriba para el UI
             
             const clampedX = Math.max(margin, Math.min(width - margin, pos.x));
             const clampedY = Math.max(topMargin, Math.min(height - margin, pos.y));
@@ -264,10 +262,12 @@
             }
         }
 
+        // Eventos de ratón
         window.addEventListener('mousedown', onPointerDown);
         window.addEventListener('mousemove', onPointerMove);
         window.addEventListener('mouseup', onPointerUp);
 
+        // Eventos táctiles
         window.addEventListener('touchstart', onPointerDown);
         window.addEventListener('touchmove', onPointerMove);
         window.addEventListener('touchend', onPointerUp);
@@ -287,18 +287,18 @@
             ctx.closePath();
         }
 
-        // Bucle de renderizado fluido
         function animate() {
             ctx.fillStyle = 'rgba(5, 2, 10, 0.28)';
             ctx.fillRect(0, 0, width, height);
 
-            // Inercia de movimiento suave para los nodos
+            // Movimiento suave de los nodos
             nodeA.x += (nodeA.targetX - nodeA.x) * 0.2;
             nodeA.y += (nodeA.targetY - nodeA.y) * 0.2;
             nodeB.x += (nodeB.targetX - nodeB.x) * 0.2;
             nodeB.y += (nodeB.targetY - nodeB.y) * 0.2;
 
             const distance = Math.hypot(nodeA.x - nodeB.x, nodeA.y - nodeB.y);
+            // Umbral ajustado para corazón pequeño
             const connectionThreshold = 75;
             const isConnected = distance < connectionThreshold;
 
@@ -306,6 +306,7 @@
             let centerY = (nodeA.y + nodeB.y) / 2;
 
             if (isConnected) {
+                // Atracción suave al centro si no se arrastra
                 if (!nodeA.isDragging) {
                     nodeA.targetX += (centerX - nodeA.targetX) * 0.3;
                     nodeA.targetY += (centerY - nodeA.targetY) * 0.3;
@@ -315,7 +316,7 @@
                     nodeB.targetY += (centerY - nodeB.targetY) * 0.3;
                 }
 
-                // Linterna UV: Revelar el poema oculto dentro de la máscara del corazón
+                // Linterna UV: Revelar poema
                 ctx.save();
                 defineHeartMask(ctx, centerX, centerY, 8.5);
                 ctx.clip();
@@ -323,13 +324,14 @@
                 ctx.restore();
             }
 
-            // Las partículas se actualizan y se dibujan SOBRE el poema revelado (al frente)
+            // Partículas actualizadas SOBRE el poema
             particles.forEach(p => {
                 p.update(isConnected, centerX, centerY);
                 p.draw();
             });
 
-            // Dibujar Nodo B (Violeta) primero para que NodeA esté encima
+            // Dibujar Nodos
+            // B (Violeta) primero
             ctx.save();
             ctx.shadowBlur = 30;
             ctx.shadowColor = nodeB.color;
@@ -345,7 +347,7 @@
             ctx.arc(nodeB.x, nodeB.y, nodeB.radius, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Dibujar Nodo A (Ámbar) después para que esté encima
+            // A (Ámbar) después, encima
             ctx.save();
             ctx.shadowBlur = 30;
             ctx.shadowColor = nodeA.color;
