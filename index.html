@@ -29,7 +29,7 @@
             z-index: 10;
             width: 100%;
             padding: 0 15px;
-            transition: opacity 0.6s ease; /* Transición suave para ocultarse */
+            transition: opacity 0.6s ease;
         }
         #ui.fade-out {
             opacity: 0;
@@ -72,18 +72,28 @@
         const ctx = canvas.getContext('2d');
         const uiElement = document.getElementById('ui');
 
-        let width, height;
+        let width, height, dpr;
 
         // --- Configuración del Poema ---
         const poemText = "Quiero pedirte perdón si mi forma de expresarme te llegó a abrumar,\nsi con mis detalles e intensidad no te dejé tranquila respirar.\nSabes muy bien que no suelo ser así con nadie más en mi vida,\npero contigo mi verdadero sentir encontró una clara salida.\n\nNo vengo a pedirte respuestas ni a volver a presionar,\nentiendo que tu corazón necesita tiempo y espacio para sanar.\nMis palabras ya te dijeron la promesa que elegí sostener,\ny mi postura no ha cambiado, no hay nada que temer.\n\nTe esperaré en este rincón del universo con paciencia y calma,\nrespetando tus procesos y cuidando el espacio de tu alma.\nSolo el tiempo, una palabra tuya o un nuevo destino en tu camino\npodrán cambiar la certeza de lo que hoy por ti siento y convino.\n\nMe quedo tranquilo observando cómo vuelves a brillar,\nsabiendo que lo que es verdadero... jamás se necesita forzar.";
 
-        const fontSize = 15;
+        const fontSize = 17;
         let lineHeight;
         let lines;
 
         function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+            width = window.innerWidth;
+            height = window.innerHeight;
+
+            // Ajustar resolución interna del canvas para evitar estiramientos en GitHub Pages
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+
+            ctx.scale(dpr, dpr);
+
             lineHeight = fontSize * 1.35;
             ctx.font = `${fontSize}px Georgia, serif`;
             lines = wrapText(poemText, width * 0.85);
@@ -337,7 +347,6 @@
             let centerX = (nodeA.x + nodeB.x) / 2;
             let centerY = (nodeA.y + nodeB.y) / 2;
 
-            // Ocultar o mostrar el texto superior según si el corazón está formado
             if (isConnected) {
                 uiElement.classList.add('fade-out');
             } else {
